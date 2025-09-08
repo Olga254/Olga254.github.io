@@ -1,12 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>АвтоСалон | Продажа автомобилей</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .cars {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+        .car {
+            background: white;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 300px;
+            text-align: center;
+        }
+        .car img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-    35413541354135435
+    <header>
+        <h1>АвтоСалон Премиум</h1>
+        <p>Продажа автомобилей класса ретро</p>
+    </header>
+
+    <div class="cars">
+        <div class="car">
+            <h2>Audi 80</h2>
+            <img src="https://s00.yaplakal.com/pics/pics_original/2/6/4/18851462.jpg" alt="Audi 80">
+            <p>Легендарный немецкий седан в отличном состоянии</p>
+            <p><strong>Цена:</strong> 500 000 руб.</p>
+            <button>Подробнее</button>
+        </div>
+
+        <div class="car">
+            <h2>BMW E36</h2>
+            <img src="https://theromanticvineyard.com/wp-content/uploads/2010/04/bmw.jpg" alt="BMW E36">
+            <p>Культовое купе с идеальной геометрией кузова</p>
+            <p><strong>Цена:</strong> 650 000 руб.</p>
+            <button>Подробнее</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>Контакты: +7 (495) 123-45-67</p>
+        <p>Адрес: Москва, ул. Автозаводская, 12</p>
+    </footer>
 </body>
 </html>
