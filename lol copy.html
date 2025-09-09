@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>АвтоСалон | Продажа автомобилей</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Заголовок -->
+        <header class="header-class text-center mb-5">
+            <h1 class="display-4 fw-bold">АвтоСалон Премиум</h1>
+            <p class="lead text-muted">Продажа автомобилей класса ретро</p>
+        </header>
+
+        <!-- Первый ряд с автомобилями -->
+        <div class="row mb-4">
+            <div class="border col p-4 m-2">
+                <h2 class="text-center">Audi 80</h2>
+                <img src="https://s00.yaplakal.com/pics/pics_original/2/6/4/18851462.jpg" 
+                     alt="Audi 80" 
+                     class="img-fluid rounded mb-3">
+                <p>Легендарный немецкий седан в отличном состоянии</p>
+                <p><strong>Цена:</strong> 500 000 руб.</p>
+                <button class="btn btn-primary w-100" onclick="console.log(123)">Подробнее</button>
+            </div>
+            
+            <div class="bg-success col p-4 m-2 text-white">
+                <h2 class="text-center">BMW E36</h2>
+                <img src="https://theromanticvineyard.com/wp-content/uploads/2010/04/bmw.jpg" 
+                     alt="BMW E36" 
+                     class="img-fluid rounded mb-3">
+                <p>Культовое купе с идеальной геометрией кузова</p>
+                <p><strong>Цена:</strong> 650 000 руб.</p>
+                <button class="btn btn-light w-100" onclick="console.log(321)">Подробнее</button>
+            </div>
+        </div>
+
+        <!-- Футер -->
+        <footer class="footer-class bg-light py-4 mt-5 rounded text-center">
+            <p class="mb-1"><strong>Контакты:</strong> +7 (495) 123-45-67</p>
+            <p class="mb-0"><strong>Адрес:</strong> Москва, ул. Автозаводская, 12</p>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+    <script>
+        // Функция для добавления обработчиков ко всем элементам с классами
+        function attachConsoleLogToAllClasses() {
+            // Получаем все элементы с любыми классами
+            const elementsWithClasses = document.querySelectorAll('[class]');
+            
+            elementsWithClasses.forEach(element => {
+                // Добавляем обработчик клика
+                element.addEventListener('click', function() {
+                    console.log(123);
+                });
+            });
+            
+            console.log('Обработчики console.log(123) привязаны ко всем классам');
+        }
+
+        // Вызываем функцию после загрузки DOM
+        document.addEventListener('DOMContentLoaded', attachConsoleLogToAllClasses);
+    </script>
+</body>
+</html>
