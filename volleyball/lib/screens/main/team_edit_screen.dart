@@ -29,6 +29,12 @@ class _TeamEditScreenState extends State<TeamEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Редактирование команды'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            context.go('/team');
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -43,7 +49,6 @@ class _TeamEditScreenState extends State<TeamEditScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Логотип команды
               Center(
                 child: GestureDetector(
                   onTap: _pickTeamLogo,
@@ -67,8 +72,6 @@ class _TeamEditScreenState extends State<TeamEditScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Название команды
               TextFormField(
                 controller: _teamNameController,
                 decoration: const InputDecoration(
@@ -84,8 +87,6 @@ class _TeamEditScreenState extends State<TeamEditScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
-              // Город
               TextFormField(
                 controller: _cityController,
                 decoration: const InputDecoration(
@@ -95,8 +96,6 @@ class _TeamEditScreenState extends State<TeamEditScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Описание
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
@@ -107,8 +106,6 @@ class _TeamEditScreenState extends State<TeamEditScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Заголовок раздела игроков
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -126,8 +123,6 @@ class _TeamEditScreenState extends State<TeamEditScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Список игроков
               ..._teamPlayers.map((player) {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
@@ -191,19 +186,16 @@ class _TeamEditScreenState extends State<TeamEditScreen> {
   Future<void> _saveTeamInfo() async {
     if (_formKey.currentState!.validate()) {
       try {
-        // Временная заглушка - сохранение информации
         await Future.delayed(const Duration(seconds: 1));
-        
+
         if (!mounted) return;
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Информация о команде сохранена'),
             backgroundColor: Colors.green,
           ),
         );
-
-        // Вернуться назад
         if (mounted) {
           Navigator.of(context).pop();
         }

@@ -11,6 +11,12 @@ class RoleScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Выбор роли'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            context.go('/authorization');
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -48,7 +54,6 @@ class RoleScreen extends StatelessWidget {
             const SizedBox(height: 40),
             TextButton(
               onPressed: () {
-                // Пропустить выбор роли (для существующих пользователей)
                 context.go('/authorization');
               },
               child: const Text('Уже есть аккаунт? Войти'),

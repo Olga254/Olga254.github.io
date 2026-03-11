@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/auth_storage.dart';
 
 class AuthorizationScreen extends StatefulWidget {
   const AuthorizationScreen({super.key});
@@ -14,9 +15,25 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
   bool _isLoading = false;
   bool _showError = false;
+  bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final credentials = await AuthStorage.getCredentials();
+    if (credentials['email'] != null && mounted) {
+      _emailController.text = credentials['email']!;
+    }
+    if (credentials['password'] != null && mounted) {
+      _passwordController.text = credentials['password']!;
+    }
+  }
 
   @override
   void dispose() {
@@ -40,7 +57,6 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
             children: [
               const SizedBox(height: 20),
 
-              // Email
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
@@ -68,28 +84,38 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                 },
               ),
               const SizedBox(height: 15),
-
-              // Пароль
               TextFormField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Пароль',
-                  prefixIcon: Icon(Icons.lock),
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                  border: const OutlineInputBorder(),
                   filled: true,
-                  fillColor: Color(0xFFF8F9FA),
+                  fillColor: const Color(0xFFF8F9FA),
                 ),
-                obscureText: true,
+                obscureText: _obscurePassword,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Введите пароль';
                   }
+                  if (value.length < 6) {
+                    return 'Пароль должен быть не менее 6 символов';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: 10),
-
               if (_showError)
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -112,15 +138,14 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                   ),
                 ),
               const SizedBox(height: 30),
-
-              // Кнопка входа
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _login,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 15),
-                        backgroundColor: Theme.of(context).primaryColor,
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white,
                       ),
                       child: const Text(
                         'Войти',
@@ -128,8 +153,6 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
                       ),
                     ),
               const SizedBox(height: 20),
-
-              // Ссылки
               TextButton(
                 onPressed: () {
                   context.go('/registration');
@@ -164,25 +187,38 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
       await authProvider.signIn(
         email: _emailController.text,
         password: _passwordController.text,
       );
 
-      // Успешный вход - перейти на главный экран
       if (mounted) {
         context.go('/home');
       }
-
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка входа: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        String errorMessage = e.toString();
+        if (errorMessage.startsWith('Exception: ')) {
+          errorMessage = errorMessage.substring('Exception: '.length);
+        }
+
+        // Проверяем, является ли ошибка "неверный email/пароль"
+        if (errorMessage.toLowerCase().contains('неверный email') ||
+            errorMessage.toLowerCase().contains('invalid login credentials')) {
+          _showRegistrationSuggestionDialog();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка входа: $errorMessage'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+
+        setState(() {
+          _showError = true;
+        });
       }
     } finally {
       if (mounted) {
@@ -191,6 +227,38 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
         });
       }
     }
+  }
+
+  void _showRegistrationSuggestionDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Пользователь не найден'),
+        content: const Text(
+          'Пользователь с таким email не зарегистрирован. Хотите перейти к регистрации?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Отмена'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              // Переходим на регистрацию, передавая email и пароль
+              context.go(
+                '/registration',
+                extra: {
+                  'email': _emailController.text,
+                  'password': _passwordController.text,
+                },
+              );
+            },
+            child: const Text('Зарегистрироваться'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showPasswordResetDialog(BuildContext context) {
@@ -227,7 +295,7 @@ class _AuthorizationScreenState extends State<AuthorizationScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  // Здесь нужен код для восстановления пароля
+                  // Здесь должен быть вызов API для сброса пароля
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

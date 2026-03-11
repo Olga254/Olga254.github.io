@@ -20,7 +20,6 @@ class _TeamScreenState extends State<TeamScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _checkIfCaptain() async {
-    // Временная заглушка
     await Future.delayed(const Duration(milliseconds: 100));
     setState(() {
       _isCaptain = true;
@@ -32,6 +31,12 @@ class _TeamScreenState extends State<TeamScreen> with SingleTickerProviderStateM
     return Scaffold(
       appBar: AppBar(
         title: const Text('Команда'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            context.go('/home');
+          },
+        ),
         actions: [
           if (_isCaptain)
             IconButton(

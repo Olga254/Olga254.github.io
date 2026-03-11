@@ -9,6 +9,7 @@ import '../screens/main/add_player_screen.dart';
 import '../screens/main/schedule_screen.dart';
 import '../screens/main/profile_screen.dart';
 import '../screens/main/game_search_screen.dart';
+import '../screens/admin/notifications_admin_screen.dart';
 
 class AppRouter {
   static GoRouter get router => _router;
@@ -55,6 +56,10 @@ class AppRouter {
       GoRoute(
         path: '/game-search',
         builder: (context, state) => const GameSearchScreen(),
+      ),
+      GoRoute(
+        path: '/admin/notifications',
+        builder: (context, state) => const NotificationsAdminScreen(),
       ),
     ],
   );

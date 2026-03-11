@@ -16,7 +16,6 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
   final _jerseyNumberController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
-  
   File? _playerPhoto;
   String? _selectedPosition;
   bool _isLoading = false;
@@ -35,6 +34,12 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Добавить игрока'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            context.go('/team/edit');
+          },
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -67,7 +72,6 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-
               // Полное имя
               TextFormField(
                 controller: _fullNameController,
@@ -84,7 +88,6 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
               // Номер на майке
               TextFormField(
                 controller: _jerseyNumberController,
@@ -106,12 +109,9 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
-              // Позиция - исправляем deprecated value
+              // Позиция - используем initialValue вместо value
               DropdownButtonFormField<String>(
-                // Заменяем value на initialValue
-                // value: _selectedPosition, // DEPRECATED
-                initialValue: _selectedPosition, // ИСПРАВЛЕНО
+                initialValue: _selectedPosition,
                 decoration: const InputDecoration(
                   labelText: 'Позиция',
                   border: OutlineInputBorder(),
@@ -136,7 +136,6 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
               // Телефон
               TextFormField(
                 controller: _phoneController,
@@ -148,7 +147,6 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 16),
-
               // Email
               TextFormField(
                 controller: _emailController,
@@ -160,7 +158,6 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 30),
-
               // Кнопки
               Row(
                 children: [
@@ -207,7 +204,7 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
   Future<void> _pickPlayerPhoto() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    
+
     if (pickedFile != null) {
       setState(() {
         _playerPhoto = File(pickedFile.path);
@@ -218,7 +215,7 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
   Future<void> _addPlayer() async {
     if (_formKey.currentState!.validate()) {
       if (!mounted) return;
-      
+
       setState(() {
         _isLoading = true;
       });
@@ -226,17 +223,16 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
       try {
         // Временная заглушка - добавление игрока
         await Future.delayed(const Duration(seconds: 1));
-        
+
         // Проверяем mounted перед использованием контекста
         if (!mounted) return;
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Игрок успешно добавлен в команду'),
             backgroundColor: Colors.green,
           ),
         );
-
         // Вернуться к редактированию команды
         if (mounted) {
           Navigator.of(context).pop();

@@ -8,11 +8,11 @@ import 'router/app_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await dotenv.load();
-  
+
   await SupabaseService().initialize();
-  
+
   runApp(
     MultiProvider(
       providers: [
@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
+
     return MaterialApp.router(
       title: 'Volleyball App',
       theme: ThemeData.light(),

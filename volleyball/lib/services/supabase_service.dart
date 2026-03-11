@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SupabaseService {
   static final SupabaseService _instance = SupabaseService._internal();
-  
+
   factory SupabaseService() {
     return _instance;
   }

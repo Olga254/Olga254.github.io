@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/auth_storage.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -18,18 +19,39 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _confirmPasswordController = TextEditingController();
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  
+  final _teamNameController = TextEditingController();
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _errorMessage;
-  
+  DateTime? _selectedDate;
+  String? _selectedPosition;
+
+  final List<String> _positions = [
+    'Нападающий',
+    'Защитник',
+    'Связующий',
+    'Либеро',
+    'Диагональный',
+    'Доигровщик',
+  ];
+
   @override
   void initState() {
     super.initState();
     _phoneController.addListener(_formatPhoneNumber);
+
+    // Если на экран перешли с передачи email/пароля (например, из авторизации)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final extra = GoRouterState.of(context).extra;
+      if (extra != null && extra is Map<String, String>) {
+        if (extra['email'] != null) _emailController.text = extra['email']!;
+        if (extra['password'] != null) _passwordController.text = extra['password']!;
+      }
+    });
   }
-  
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -38,47 +60,37 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _fullNameController.dispose();
     _phoneController.removeListener(_formatPhoneNumber);
     _phoneController.dispose();
+    _teamNameController.dispose();
     super.dispose();
   }
-  
-  // Форматирование номера телефона при вводе
+
   void _formatPhoneNumber() {
     final text = _phoneController.text;
-    
     if (text.isEmpty) return;
-    
-    // Убираем все нецифровые символы кроме +
+
     String digitsOnly = text.replaceAll(RegExp(r'[^\d+]'), '');
-    
-    // Автоматическое добавление +7 для российских номеров
-    if (!digitsOnly.startsWith('+')) {
-      if (digitsOnly.startsWith('7') || digitsOnly.startsWith('8')) {
-        digitsOnly = '+7${digitsOnly.substring(1)}';
-      } else if (digitsOnly.length == 10 && digitsOnly.startsWith('9')) {
-        digitsOnly = '+7$digitsOnly';
-      } else {
-        digitsOnly = '+$digitsOnly';
-      }
+
+    if (digitsOnly.startsWith('8')) {
+      digitsOnly = '+7${digitsOnly.substring(1)}';
+    } else if (digitsOnly.startsWith('7') && !digitsOnly.startsWith('+')) {
+      digitsOnly = '+$digitsOnly';
+    } else if (digitsOnly.length == 10 && digitsOnly.startsWith('9')) {
+      digitsOnly = '+7$digitsOnly';
+    } else if (!digitsOnly.startsWith('+')) {
+      digitsOnly = '+$digitsOnly';
     }
-    
+
     String formatted = '';
-    
     if (digitsOnly.startsWith('+7')) {
-      // Формат для России: +7 (XXX) XXX-XX-XX
       final numbers = digitsOnly.substring(2);
-      
       if (numbers.isNotEmpty) {
         formatted = '+7';
-        
-        if (numbers.isNotEmpty) { // ИСПРАВЛЕНО: numbers.length > 0 -> numbers.isNotEmpty
+        if (numbers.isNotEmpty) {
           formatted += ' (${numbers.substring(0, numbers.length > 3 ? 3 : numbers.length)}';
-          
           if (numbers.length > 3) {
             formatted += ') ${numbers.substring(3, numbers.length > 6 ? 6 : numbers.length)}';
-            
             if (numbers.length > 6) {
               formatted += '-${numbers.substring(6, numbers.length > 8 ? 8 : numbers.length)}';
-              
               if (numbers.length > 8) {
                 formatted += '-${numbers.substring(8, numbers.length > 10 ? 10 : numbers.length)}';
               }
@@ -87,10 +99,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         }
       }
     } else {
-      // Общий формат для других стран
       formatted = digitsOnly;
     }
-    
+
     if (text != formatted) {
       _phoneController.value = _phoneController.value.copyWith(
         text: formatted,
@@ -98,31 +109,55 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       );
     }
   }
-  
-  // Получение чистого номера телефона
+
   String _getCleanPhoneNumber() {
     final text = _phoneController.text;
     String digitsOnly = text.replaceAll(RegExp(r'[^\d+]'), '');
-    
-    // Автоматическое добавление +7 для российских номеров
-    if (!digitsOnly.startsWith('+')) {
-      if (digitsOnly.startsWith('7') || digitsOnly.startsWith('8')) {
-        digitsOnly = '+7${digitsOnly.substring(1)}';
-      } else if (digitsOnly.length == 10 && digitsOnly.startsWith('9')) {
-        digitsOnly = '+7$digitsOnly';
-      } else {
-        digitsOnly = '+$digitsOnly';
-      }
+
+    if (digitsOnly.startsWith('8')) {
+      digitsOnly = '+7${digitsOnly.substring(1)}';
+    } else if (digitsOnly.startsWith('7') && !digitsOnly.startsWith('+')) {
+      digitsOnly = '+$digitsOnly';
+    } else if (digitsOnly.length == 10 && digitsOnly.startsWith('9')) {
+      digitsOnly = '+7$digitsOnly';
+    } else if (!digitsOnly.startsWith('+')) {
+      digitsOnly = '+$digitsOnly';
     }
-    
     return digitsOnly;
   }
-  
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now().subtract(const Duration(days: 365 * 18)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Colors.blue,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final role = authProvider.selectedRole ?? 'игрок';
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Регистрация'),
@@ -138,7 +173,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Роль пользователя
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
                 decoration: BoxDecoration(
@@ -180,34 +214,31 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ],
                 ),
               ),
-              
               const SizedBox(height: 24),
-              
-              // Отображение ошибки
               if (_errorMessage != null)
                 Container(
                   padding: const EdgeInsets.all(12),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.red[50],
+                    color: Colors.red.shade50,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.red),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red[700]),
+                      Icon(Icons.error_outline, color: Colors.red.shade700),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           _errorMessage!,
                           style: TextStyle(
-                            color: Colors.red[700],
+                            color: Colors.red.shade700,
                             fontSize: 14,
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.close, color: Colors.red[700], size: 20),
+                        icon: Icon(Icons.close, color: Colors.red.shade700, size: 20),
                         onPressed: () {
                           setState(() {
                             _errorMessage = null;
@@ -217,8 +248,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ],
                   ),
                 ),
-              
-              // Email
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
@@ -236,36 +265,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Введите email';
                   }
-                  
                   final email = value.trim();
-                  
                   if (!email.contains('@')) {
                     return 'Email должен содержать @';
                   }
-                  
                   final parts = email.split('@');
                   if (parts.length != 2) {
                     return 'Некорректный email';
                   }
-                  
                   final localPart = parts[0];
                   final domain = parts[1];
-                  
                   if (localPart.isEmpty || domain.isEmpty) {
                     return 'Некорректный email';
                   }
-                  
                   if (!domain.contains('.')) {
                     return 'Некорректный домен email';
                   }
-                  
                   return null;
                 },
               ),
-              
               const SizedBox(height: 16),
-              
-              // Пароль
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
@@ -299,10 +318,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   return null;
                 },
               ),
-              
               const SizedBox(height: 16),
-              
-              // Подтверждение пароля
               TextFormField(
                 controller: _confirmPasswordController,
                 decoration: InputDecoration(
@@ -335,10 +351,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   return null;
                 },
               ),
-              
               const SizedBox(height: 16),
-              
-              // Полное имя
               TextFormField(
                 controller: _fullNameController,
                 decoration: const InputDecoration(
@@ -361,10 +374,78 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   return null;
                 },
               ),
-              
               const SizedBox(height: 16),
-              
-              // Телефон с автоматическим форматированием
+              GestureDetector(
+                onTap: () => _selectDate(context),
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    controller: TextEditingController(
+                      text: _selectedDate != null
+                          ? '${_selectedDate!.day.toString().padLeft(2, '0')}.${_selectedDate!.month.toString().padLeft(2, '0')}.${_selectedDate!.year}'
+                          : '',
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Дата рождения',
+                      hintText: 'Выберите дату',
+                      prefixIcon: Icon(Icons.calendar_today),
+                      suffixIcon: Icon(Icons.arrow_drop_down),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Color(0xFFF8F9FA),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Выберите дату рождения';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (role == 'игрок')
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedPosition,
+                  decoration: const InputDecoration(
+                    labelText: 'Позиция в команде',
+                    prefixIcon: Icon(Icons.sports_volleyball),
+                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Color(0xFFF8F9FA),
+                  ),
+                  items: _positions.map((position) {
+                    return DropdownMenuItem(
+                      value: position,
+                      child: Text(position),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedPosition = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (role == 'игрок' && (value == null || value.isEmpty)) {
+                      return 'Выберите позицию';
+                    }
+                    return null;
+                  },
+                ),
+              if (role == 'игрок') const SizedBox(height: 16),
+              if (role == 'игрок')
+                TextFormField(
+                  controller: _teamNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Название команды',
+                    hintText: 'Введите название вашей команды',
+                    prefixIcon: Icon(Icons.groups),
+                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Color(0xFFF8F9FA),
+                  ),
+                  textInputAction: TextInputAction.next,
+                ),
+              if (role == 'игрок') const SizedBox(height: 16),
               TextFormField(
                 controller: _phoneController,
                 decoration: const InputDecoration(
@@ -382,24 +463,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Введите телефон';
                   }
-                  
                   final cleaned = _getCleanPhoneNumber();
-                  
                   if (cleaned.length < 12) {
                     return 'Введите полный номер телефона';
                   }
-                  
                   if (!cleaned.startsWith('+')) {
                     return 'Номер должен начинаться с + и кода страны';
                   }
-                  
                   return null;
                 },
               ),
-              
               const SizedBox(height: 32),
-              
-              // Кнопка регистрации
               _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(),
@@ -423,10 +497,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         ),
                       ),
                     ),
-              
               const SizedBox(height: 20),
-              
-              // Ссылка на авторизацию
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -435,7 +506,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   child: RichText(
                     text: TextSpan(
                       style: TextStyle(
-                        color: Colors.grey[700],
+                        color: Colors.grey.shade700,
                         fontSize: 14,
                       ),
                       children: [
@@ -452,10 +523,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ),
               ),
-              
               const SizedBox(height: 10),
-              
-              // Ссылка на выбор роли
               Center(
                 child: TextButton(
                   onPressed: () {
@@ -464,7 +532,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   child: Text(
                     'Вернуться к выбору роли',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: Colors.grey.shade600,
                       fontSize: 14,
                     ),
                   ),
@@ -476,67 +544,94 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ),
     );
   }
-  
+
   Future<void> _register() async {
     FocusScope.of(context).unfocus();
-    
+
     setState(() {
       _errorMessage = null;
     });
-    
+
     if (_formKey.currentState!.validate()) {
+      if (_selectedDate == null) {
+        setState(() {
+          _errorMessage = 'Выберите дату рождения';
+        });
+        return;
+      }
+
+      if (Provider.of<AuthProvider>(context, listen: false).selectedRole == 'игрок' &&
+          (_selectedPosition == null || _selectedPosition!.isEmpty)) {
+        setState(() {
+          _errorMessage = 'Выберите позицию в команде';
+        });
+        return;
+      }
+
       setState(() {
         _isLoading = true;
       });
-      
+
       try {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        
-        // Подготовка данных
+
         final email = _emailController.text.trim();
         final password = _passwordController.text;
         final fullName = _fullNameController.text.trim();
         final phone = _getCleanPhoneNumber();
-        
+        final birthDate = _selectedDate!;
+        final position = authProvider.selectedRole == 'игрок' ? _selectedPosition : null;
+        final teamName = authProvider.selectedRole == 'игрок' ? _teamNameController.text.trim() : null;
+
         if (kDebugMode) {
           debugPrint('=== РЕГИСТРАЦИЯ ===');
           debugPrint('Email: $email');
           debugPrint('Пароль: $password');
           debugPrint('Имя: $fullName');
           debugPrint('Телефон: $phone');
+          debugPrint('Дата рождения: $birthDate');
           debugPrint('Роль: ${authProvider.selectedRole ?? 'игрок'}');
+          debugPrint('Позиция: $position');
+          debugPrint('Название команды: $teamName');
           debugPrint('===================');
         }
-        
+
         await authProvider.signUp(
           email: email,
           password: password,
           fullName: fullName,
           phone: phone,
           role: authProvider.selectedRole ?? 'игрок',
+          birthDate: birthDate,
+          position: position,
+          teamName: teamName,
         );
-        
+
+        // Сохраняем данные для автозаполнения
+        await AuthStorage.saveCredentials(email, password);
+
+        // После успешной регистрации сразу переходим на главный экран
         if (mounted) {
-          _showSuccessNotification(context);
+          context.go('/home');
         }
-        
       } catch (e) {
         if (mounted) {
           String errorMessage = e.toString();
-          
           if (errorMessage.startsWith('Exception: ')) {
             errorMessage = errorMessage.substring('Exception: '.length);
           }
-          
+
           setState(() {
             _errorMessage = errorMessage;
           });
-          
+
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Scrollable.ensureVisible(
-              context,
-              duration: const Duration(milliseconds: 300),
-            );
+            if (mounted) {
+              Scrollable.ensureVisible(
+                context,
+                duration: const Duration(milliseconds: 300),
+              );
+            }
           });
         }
       } finally {
@@ -548,43 +643,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       }
     }
   }
-  
-  void _showSuccessNotification(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green),
-            SizedBox(width: 10),
-            Text('Регистрация успешна!'),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Добро пожаловать в приложение Volleyball!'),
-            SizedBox(height: 10),
-            Text(
-              'Теперь вы можете войти в систему и начать использовать все возможности приложения.',
-              style: TextStyle(fontSize: 14),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/home');
-            },
-            child: const Text('На главную'),
-          ),
-        ],
-      ),
-    );
-  }
-  
+
   String _getRoleDisplayName(String role) {
     switch (role) {
       case 'игрок':
@@ -593,13 +652,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         return 'Любитель';
       case 'болельщик':
         return 'Болельщик';
-      case 'капитан':
-        return 'Капитан';
       default:
         return 'Игрок';
     }
   }
-  
+
   IconData _getRoleIcon(String role) {
     switch (role) {
       case 'игрок':
@@ -608,8 +665,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         return Icons.person;
       case 'болельщик':
         return Icons.people;
-      case 'капитан':
-        return Icons.star;
       default:
         return Icons.person;
     }

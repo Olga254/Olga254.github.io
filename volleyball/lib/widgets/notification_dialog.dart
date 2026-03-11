@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 class NotificationDialog extends StatelessWidget {
   final Map<String, dynamic>? notification;
-
   const NotificationDialog({super.key, this.notification});
 
   @override

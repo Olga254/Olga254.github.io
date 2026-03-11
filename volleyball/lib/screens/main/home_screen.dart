@@ -22,9 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadNews() async {
     try {
-      // Временная заглушка новостей
       await Future.delayed(const Duration(seconds: 1));
-      
+
       setState(() {
         _news = [
           {
@@ -82,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.userProfile;
     final role = user?['role'] ?? 'игрок';
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -98,6 +97,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(fontSize: 12, color: Colors.white70),
               ),
           ],
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            context.go('/authorization');
+          },
         ),
         actions: [
           IconButton(
@@ -170,7 +175,6 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (index) {
           switch (index) {
             case 0:
-              // Уже на главной
               break;
             case 1:
               context.go('/team');
@@ -179,12 +183,12 @@ class _HomeScreenState extends State<HomeScreen> {
               context.go('/schedule');
               break;
             case 3:
-              if (role == 'любитель') {
+              if (role == 'любитель' || role == 'игрок') {
                 context.go('/game-search');
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Поиск игр доступен только для роли "Любитель"'),
+                    content: Text('Поиск игр доступен только для ролей "Игрок" и "Любитель"'),
                     duration: Duration(seconds: 2),
                   ),
                 );
@@ -208,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.search),
-            label: role == 'любитель' ? 'Поиск игр' : 'Расписание',
+            label: role == 'любитель' || role == 'игрок' ? 'Поиск игр' : 'Расписание',
           ),
         ],
       ),
@@ -217,11 +221,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _logout() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     try {
       await authProvider.signOut();
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/role', (route) => false);
+        context.go('/authorization');
       }
     } catch (e) {
       if (mounted) {
@@ -333,7 +337,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final date = DateTime.parse(dateString);
       final now = DateTime.now();
       final difference = now.difference(date);
-
       if (difference.inDays == 0) {
         return 'Сегодня';
       } else if (difference.inDays == 1) {
